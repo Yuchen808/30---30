@@ -191,55 +191,63 @@ body.docked {
 .undock-btn svg { display: block; }
 .undock-btn:focus { outline: none; }
 
-/* ---- Ripple animation when an eye break fires ---- */
+/* ---- Water-ripple animation while waiting for ack ----
+   register a custom property so its length value can be
+   interpolated inside @keyframes (Chromium >= 85) */
+
+@property --ripple-offset {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
 
 #ripple-stage {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
+  inset: 0;
   pointer-events: none;
   z-index: 1000;
-}
-
-.ripple {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 60px;
-  height: 60px;
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
   opacity: 0;
-  transform: translate(-50%, -50%);
+  transition: opacity 220ms ease;
 }
 
-#ripple-stage.active .ripple {
-  animation: rippleOut 1.6s cubic-bezier(0.2, 0.7, 0.4, 1) infinite;
+#ripple-stage.active {
+  opacity: 1;
+  /* dense concentric rings — the 'crests' are white, troughs transparent.
+     period = 18px so one full animation cycle (offset 0 -> 18) loops seamlessly */
+  background: repeating-radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0)    calc(6px  + var(--ripple-offset)),
+    rgba(255, 255, 255, 0.95) calc(11px + var(--ripple-offset)),
+    rgba(255, 255, 255, 0.95) calc(13px + var(--ripple-offset)),
+    rgba(255, 255, 255, 0)    calc(18px + var(--ripple-offset))
+  );
+  filter: blur(0.8px);
+  /* fade rings out toward the corners so it looks like a ripple
+     dampening with distance, instead of a hard-edged tile */
+  mask-image: radial-gradient(
+    circle at center,
+    black 0%,
+    black 28%,
+    rgba(0, 0, 0, 0.65) 58%,
+    rgba(0, 0, 0, 0.18) 88%,
+    transparent 100%
+  );
+  -webkit-mask-image: radial-gradient(
+    circle at center,
+    black 0%,
+    black 28%,
+    rgba(0, 0, 0, 0.65) 58%,
+    rgba(0, 0, 0, 0.18) 88%,
+    transparent 100%
+  );
+  animation: rippleFlow 1.5s linear infinite;
 }
 
-@keyframes rippleOut {
-  0% {
-    width: 60px;
-    height: 60px;
-    opacity: 0.9;
-    border-width: 2px;
-  }
-  100% {
-    width: 1500px;
-    height: 1500px;
-    opacity: 0;
-    border-width: 1px;
-  }
+@keyframes rippleFlow {
+  0%   { --ripple-offset: 0px; }
+  100% { --ripple-offset: 18px; }
 }
-
-#ripple-stage.active .ripple:nth-child(1) { animation-delay: 0s; }
-#ripple-stage.active .ripple:nth-child(2) { animation-delay: 0.3s; }
-#ripple-stage.active .ripple:nth-child(3) { animation-delay: 0.6s; }
-#ripple-stage.active .ripple:nth-child(4) { animation-delay: 0.9s; }
-#ripple-stage.active .ripple:nth-child(5) { animation-delay: 1.2s; }
-#ripple-stage.active .ripple:nth-child(6) { animation-delay: 1.5s; }
 
 /* ---- Break (timer paused at 0, awaiting acknowledgement) ---- */
 
