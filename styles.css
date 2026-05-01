@@ -212,41 +212,39 @@ body.docked {
 
 #ripple-stage.active {
   opacity: 1;
-  /* dense concentric rings — the 'crests' are white, troughs transparent.
-     period = 18px so one full animation cycle (offset 0 -> 18) loops seamlessly */
+  /* sinusoidal-feeling rings: transparent -> soft white -> transparent, no plateau.
+     all three stops shift together so the period stays constant at 28px,
+     letting the keyframe loop (offset 0 -> 28) be visually seamless. */
   background: repeating-radial-gradient(
     circle at center,
-    rgba(255, 255, 255, 0) 0,
-    rgba(255, 255, 255, 0)    calc(6px  + var(--ripple-offset)),
-    rgba(255, 255, 255, 0.95) calc(11px + var(--ripple-offset)),
-    rgba(255, 255, 255, 0.95) calc(13px + var(--ripple-offset)),
-    rgba(255, 255, 255, 0)    calc(18px + var(--ripple-offset))
+    rgba(255, 255, 255, 0)    calc(0px  + var(--ripple-offset)),
+    rgba(255, 255, 255, 0.22) calc(14px + var(--ripple-offset)),
+    rgba(255, 255, 255, 0)    calc(28px + var(--ripple-offset))
   );
-  filter: blur(0.8px);
-  /* fade rings out toward the corners so it looks like a ripple
-     dampening with distance, instead of a hard-edged tile */
+  filter: blur(1.6px);
+  /* gentle dampening toward the edges */
   mask-image: radial-gradient(
     circle at center,
     black 0%,
-    black 28%,
-    rgba(0, 0, 0, 0.65) 58%,
-    rgba(0, 0, 0, 0.18) 88%,
+    black 55%,
+    rgba(0, 0, 0, 0.6) 82%,
+    rgba(0, 0, 0, 0.15) 96%,
     transparent 100%
   );
   -webkit-mask-image: radial-gradient(
     circle at center,
     black 0%,
-    black 28%,
-    rgba(0, 0, 0, 0.65) 58%,
-    rgba(0, 0, 0, 0.18) 88%,
+    black 55%,
+    rgba(0, 0, 0, 0.6) 82%,
+    rgba(0, 0, 0, 0.15) 96%,
     transparent 100%
   );
-  animation: rippleFlow 1.5s linear infinite;
+  animation: rippleFlow 2.6s linear infinite;
 }
 
 @keyframes rippleFlow {
   0%   { --ripple-offset: 0px; }
-  100% { --ripple-offset: 18px; }
+  100% { --ripple-offset: 28px; }
 }
 
 /* ---- Break (timer paused at 0, awaiting acknowledgement) ---- */
