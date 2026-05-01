@@ -160,7 +160,7 @@ body.docked {
   pointer-events: none;
   line-height: 1;
   /* nudge down so the upper dot of ":" aligns with the green dot center */
-  transform: translateY(4px);
+  transform: translateY(2.5px);
 }
 
 .undock-btn {
