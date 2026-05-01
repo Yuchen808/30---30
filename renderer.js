@@ -3,7 +3,7 @@ const EYE_INTERVAL = 30 * 60;   // every 30 minutes
 const MOVE_INTERVAL = 60 * 60;  // every 60 minutes
 const PHASE1_MS = 1000;  // dot expansion
 // phase 2 (running UI fade-in) is CSS-driven, ~1000ms
-const BREAK_HOLD_MS = 3500;  // pause at 00:00 with bell + ripples before restart
+const BREAK_BELL_INTERVAL_MS = 20000;  // re-ring every 20s while waiting for ack
 
 const startBtn = document.getElementById('start-btn');
 const pauseBtn = document.getElementById('pause-btn');
@@ -94,36 +94,69 @@ function hideRipples() {
   rippleStage.classList.remove('active');
 }
 
-// ---- Eye break (pause at 0, bell, ripples, then resume) ----
-let eyeBreakActive = false;
-let breakTimeoutHandle = null;
+// ---- Break state (timer paused at 0, awaiting user ack) ----
+let inBreak = false;
+const breakNeeds = { eye: false, move: false };
+let breakBellInterval = null;
 
-function triggerEyeBreak() {
-  eyeBreakActive = true;
-  eyeCount += 1;
-  notify('看一眼窗外', '把目光放到最远处，半秒钟就好');
+function startBreak() {
+  if (inBreak) return;  // already in break, just adding to needs
+  inBreak = true;
+  document.body.classList.add('break');
   playBell();
   showRipples();
-
-  if (breakTimeoutHandle) clearTimeout(breakTimeoutHandle);
-  breakTimeoutHandle = setTimeout(() => {
-    breakTimeoutHandle = null;
-    eyeBreakActive = false;
-    hideRipples();
-    eyeRemaining = EYE_INTERVAL;
-    render();
-    if (document.body.classList.contains('docked')) {
-      updateDock(true);
-    }
-  }, BREAK_HOLD_MS);
+  if (breakBellInterval) clearInterval(breakBellInterval);
+  breakBellInterval = setInterval(() => {
+    if (inBreak) playBell();
+  }, BREAK_BELL_INTERVAL_MS);
 }
 
-function clearEyeBreak() {
-  if (breakTimeoutHandle) {
-    clearTimeout(breakTimeoutHandle);
-    breakTimeoutHandle = null;
+function triggerEyeBreak() {
+  breakNeeds.eye = true;
+  eyeCount += 1;
+  notify('看一眼窗外', '把目光放到最远处，半秒钟就好');
+  startBreak();
+}
+
+function triggerMoveBreak() {
+  breakNeeds.move = true;
+  moveCount += 1;
+  notify('起来动一下', '站起来，喝口水，伸展一下身体');
+  startBreak();
+}
+
+function acknowledgeBreak() {
+  if (!inBreak) return;
+  inBreak = false;
+  document.body.classList.remove('break');
+  hideRipples();
+  if (breakBellInterval) {
+    clearInterval(breakBellInterval);
+    breakBellInterval = null;
   }
-  eyeBreakActive = false;
+  if (breakNeeds.eye) {
+    eyeRemaining = EYE_INTERVAL;
+    breakNeeds.eye = false;
+  }
+  if (breakNeeds.move) {
+    moveRemaining = MOVE_INTERVAL;
+    breakNeeds.move = false;
+  }
+  render();
+  if (document.body.classList.contains('docked')) {
+    updateDock(true);
+  }
+}
+
+function clearBreak() {
+  if (breakBellInterval) {
+    clearInterval(breakBellInterval);
+    breakBellInterval = null;
+  }
+  inBreak = false;
+  breakNeeds.eye = false;
+  breakNeeds.move = false;
+  document.body.classList.remove('break');
   hideRipples();
 }
 
@@ -141,20 +174,18 @@ async function notify(title, body) {
 
 function tick() {
   if (current !== state.RUNNING) return;
+  if (inBreak) return;  // both timers freeze until user acks
 
-  if (!eyeBreakActive) {
-    eyeRemaining -= 1;
-    if (eyeRemaining <= 0) {
-      eyeRemaining = 0;
-      triggerEyeBreak();
-    }
-  }
-
+  eyeRemaining -= 1;
   moveRemaining -= 1;
+
+  if (eyeRemaining <= 0) {
+    eyeRemaining = 0;
+    triggerEyeBreak();
+  }
   if (moveRemaining <= 0) {
-    moveCount += 1;
-    notify('起来动一下', '站起来，喝口水，伸展一下身体');
-    moveRemaining = MOVE_INTERVAL;
+    moveRemaining = 0;
+    triggerMoveBreak();
   }
 
   render();
@@ -219,10 +250,17 @@ pauseBtn.addEventListener('click', () => {
 stopBtn.addEventListener('click', () => {
   current = state.IDLE;
   stopTicking();
-  clearEyeBreak();
+  clearBreak();
   document.body.classList.remove('running');
   eyeRemaining = EYE_INTERVAL;
   moveRemaining = MOVE_INTERVAL;
+});
+
+// Click anywhere (except system buttons) to acknowledge a pending break
+document.body.addEventListener('click', (e) => {
+  if (!inBreak) return;
+  if (e.target.closest('.win-btn, .undock-btn, #pause-btn, #stop-btn, #start-btn')) return;
+  acknowledgeBreak();
 });
 
 document.getElementById('win-min').addEventListener('click', () => {

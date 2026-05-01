@@ -216,7 +216,7 @@ body.docked {
 }
 
 #ripple-stage.active .ripple {
-  animation: rippleOut 1.6s cubic-bezier(0.2, 0.7, 0.4, 1) forwards;
+  animation: rippleOut 1.6s cubic-bezier(0.2, 0.7, 0.4, 1) infinite;
 }
 
 @keyframes rippleOut {
@@ -240,6 +240,31 @@ body.docked {
 #ripple-stage.active .ripple:nth-child(4) { animation-delay: 0.9s; }
 #ripple-stage.active .ripple:nth-child(5) { animation-delay: 1.2s; }
 #ripple-stage.active .ripple:nth-child(6) { animation-delay: 1.5s; }
+
+/* ---- Break (timer paused at 0, awaiting acknowledgement) ---- */
+
+body.break {
+  cursor: pointer;
+}
+
+body.break #pause-btn {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+body.break .dock-dot {
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+}
+
+body.break .dock-timer {
+  animation: breakBlink 1.6s ease-in-out infinite;
+}
+
+@keyframes breakBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
 
 .app {
   position: relative;
