@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>30-30</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="titlebar">
+    <div class="window-buttons">
+      <button class="win-btn" id="win-dock" aria-label="停靠到桌面右下角">
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="1" width="9" height="9" rx="1"/>
+          <rect x="6" y="6" width="3.5" height="3.5" rx="0.5" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
+      <button class="win-btn" id="win-min" aria-label="最小化">
+        <svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round">
+          <line x1="1.5" y1="5" x2="8.5" y2="5"/>
+        </svg>
+      </button>
+      <button class="win-btn close-btn" id="win-close" aria-label="关闭">
+        <svg width="10" height="10" viewBox="0 0 10 10" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linecap="round">
+          <line x1="2" y1="2" x2="8" y2="8"/>
+          <line x1="8" y1="2" x2="2" y2="8"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <main class="app">
+    <section id="idle-view" class="view">
+      <div class="brand">
+        <h1 class="title">30 · 30</h1>
+        <p class="tagline">每 30 分钟看窗外半秒钟<br/>每 60 分钟起身喝水活动</p>
+      </div>
+
+      <div class="dot-wrap">
+        <button id="start-btn" class="dot-button" aria-label="开始"></button>
+      </div>
+    </section>
+
+    <section id="running-view" class="view">
+      <div class="status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">运行中</span>
+      </div>
+
+      <div class="timer-primary">
+        <div class="timer-label">下一次看窗外</div>
+        <div class="timer" id="eye-countdown">30:00</div>
+        <div class="timer-sub">下一次起身 <span class="num" id="move-countdown">60:00</span></div>
+      </div>
+
+      <div class="stats" id="stats">今日 · 看窗外 0 次 · 活动 0 次</div>
+
+      <div class="actions">
+        <button id="pause-btn" class="btn">暂停</button>
+        <button id="stop-btn" class="btn">结束</button>
+      </div>
+    </section>
+  </main>
+
+  <section id="docked-view">
+    <div class="dock-dot" id="dock-dot"></div>
+    <div class="dock-timer" id="dock-timer">30:00</div>
+    <button class="undock-btn" id="undock-btn" aria-label="还原" title="还原">
+      <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 1 L1 1 L1 4"/>
+        <path d="M7 10 L10 10 L10 7"/>
+      </svg>
+    </button>
+  </section>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
