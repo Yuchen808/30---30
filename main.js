@@ -2,7 +2,7 @@ const { app, BrowserWindow, Notification, ipcMain, screen } = require('electron'
 const path = require('path');
 
 const NORMAL_SIZE = { width: 460, height: 640 };
-const DOCKED_SIZE = { width: 300, height: 140 };
+const DOCKED_SIZE = { width: 240, height: 140 };
 const DOCK_MARGIN = 16;
 
 if (process.platform === 'win32') {

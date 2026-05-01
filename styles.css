@@ -151,14 +151,16 @@ body.docked {
 .dock-timer {
   position: relative;
   z-index: 2;
-  font-size: 56px;
-  font-weight: 500;
+  font-size: 76px;
+  font-weight: 300;
   letter-spacing: -0.02em;
   color: #1A1A1A;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   pointer-events: none;
   line-height: 1;
+  /* nudge down so the upper dot of ":" aligns with the green dot center */
+  transform: translateY(10px);
 }
 
 .undock-btn {
