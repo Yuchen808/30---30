@@ -1,6 +1,6 @@
-// Timing constants (in seconds). Edit for testing — e.g. 10/20.
-const EYE_INTERVAL = 30 * 60;   // every 30 minutes
-const MOVE_INTERVAL = 60 * 60;  // every 60 minutes
+// Timing constants (in seconds). FAST TEST BRANCH — production uses 30*60 / 60*60.
+const EYE_INTERVAL = 5;    // 5s instead of 30 min
+const MOVE_INTERVAL = 12;  // 12s instead of 60 min
 const PHASE1_MS = 1000;  // dot expansion
 // phase 2 (running UI fade-in) is CSS-driven, ~1000ms
 const BREAK_BELL_INTERVAL_MS = 20000;  // re-ring every 20s while waiting for ack

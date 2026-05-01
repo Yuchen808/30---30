@@ -6,7 +6,7 @@ const DOCKED_SIZE = { width: 240, height: 140 };
 const DOCK_MARGIN = 16;
 
 if (process.platform === 'win32') {
-  app.setAppUserModelId('com.yuchen.helper3030');
+  app.setAppUserModelId('com.yuchen.helper3030.test');
 }
 
 let mainWindow = null;
@@ -19,7 +19,7 @@ function createWindow() {
     maximizable: false,
     fullscreenable: false,
     backgroundColor: '#FFFFFF',
-    title: '30-30',
+    title: '30-30 (test)',
     icon: path.join(__dirname, 'icon.ico'),
     autoHideMenuBar: true,
     frame: false,
