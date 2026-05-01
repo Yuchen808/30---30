@@ -191,6 +191,56 @@ body.docked {
 .undock-btn svg { display: block; }
 .undock-btn:focus { outline: none; }
 
+/* ---- Ripple animation when an eye break fires ---- */
+
+#ripple-stage {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.ripple {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60px;
+  height: 60px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+
+#ripple-stage.active .ripple {
+  animation: rippleOut 1.6s cubic-bezier(0.2, 0.7, 0.4, 1) forwards;
+}
+
+@keyframes rippleOut {
+  0% {
+    width: 60px;
+    height: 60px;
+    opacity: 0.9;
+    border-width: 2px;
+  }
+  100% {
+    width: 1500px;
+    height: 1500px;
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+#ripple-stage.active .ripple:nth-child(1) { animation-delay: 0s; }
+#ripple-stage.active .ripple:nth-child(2) { animation-delay: 0.3s; }
+#ripple-stage.active .ripple:nth-child(3) { animation-delay: 0.6s; }
+#ripple-stage.active .ripple:nth-child(4) { animation-delay: 0.9s; }
+#ripple-stage.active .ripple:nth-child(5) { animation-delay: 1.2s; }
+#ripple-stage.active .ripple:nth-child(6) { animation-delay: 1.5s; }
+
 .app {
   position: relative;
   height: 100vh;

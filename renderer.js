@@ -3,6 +3,7 @@ const EYE_INTERVAL = 30 * 60;   // every 30 minutes
 const MOVE_INTERVAL = 60 * 60;  // every 60 minutes
 const PHASE1_MS = 1000;  // dot expansion
 // phase 2 (running UI fade-in) is CSS-driven, ~1000ms
+const BREAK_HOLD_MS = 3500;  // pause at 00:00 with bell + ripples before restart
 
 const startBtn = document.getElementById('start-btn');
 const pauseBtn = document.getElementById('pause-btn');
@@ -49,6 +50,83 @@ function render() {
   }
 }
 
+// ---- Bell synthesis (Web Audio) ----
+let audioCtx = null;
+function playBell() {
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const ctx = audioCtx;
+    const now = ctx.currentTime;
+    const fundamental = 880;  // A5
+    // bell-like inharmonic ratios
+    const partials = [
+      { ratio: 1.00, gain: 0.30 },
+      { ratio: 2.00, gain: 0.18 },
+      { ratio: 3.00, gain: 0.10 },
+      { ratio: 4.20, gain: 0.05 }
+    ];
+    partials.forEach(p => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = fundamental * p.ratio;
+      osc.type = 'sine';
+      osc.connect(gain).connect(ctx.destination);
+      gain.gain.setValueAtTime(p.gain, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+      osc.start(now);
+      osc.stop(now + 2.0);
+    });
+  } catch (_) { /* audio not available */ }
+}
+
+// ---- Ripple animation ----
+const rippleStage = document.getElementById('ripple-stage');
+function showRipples() {
+  rippleStage.classList.remove('active');
+  void rippleStage.offsetWidth;  // force reflow to restart animation
+  rippleStage.classList.add('active');
+}
+function hideRipples() {
+  rippleStage.classList.remove('active');
+}
+
+// ---- Eye break (pause at 0, bell, ripples, then resume) ----
+let eyeBreakActive = false;
+let breakTimeoutHandle = null;
+
+function triggerEyeBreak() {
+  eyeBreakActive = true;
+  eyeCount += 1;
+  notify('看一眼窗外', '把目光放到最远处，半秒钟就好');
+  playBell();
+  showRipples();
+
+  if (breakTimeoutHandle) clearTimeout(breakTimeoutHandle);
+  breakTimeoutHandle = setTimeout(() => {
+    breakTimeoutHandle = null;
+    eyeBreakActive = false;
+    hideRipples();
+    eyeRemaining = EYE_INTERVAL;
+    render();
+    if (document.body.classList.contains('docked')) {
+      updateDock(true);
+    }
+  }, BREAK_HOLD_MS);
+}
+
+function clearEyeBreak() {
+  if (breakTimeoutHandle) {
+    clearTimeout(breakTimeoutHandle);
+    breakTimeoutHandle = null;
+  }
+  eyeBreakActive = false;
+  hideRipples();
+}
+
 async function notify(title, body) {
   try {
     if (window.helper && window.helper.notify) {
@@ -64,18 +142,15 @@ async function notify(title, body) {
 function tick() {
   if (current !== state.RUNNING) return;
 
-  eyeRemaining -= 1;
-  moveRemaining -= 1;
-
-  let eyeReset = false;
-
-  if (eyeRemaining <= 0) {
-    eyeCount += 1;
-    notify('看一眼窗外', '把目光放到最远处，半秒钟就好');
-    eyeRemaining = EYE_INTERVAL;
-    eyeReset = true;
+  if (!eyeBreakActive) {
+    eyeRemaining -= 1;
+    if (eyeRemaining <= 0) {
+      eyeRemaining = 0;
+      triggerEyeBreak();
+    }
   }
 
+  moveRemaining -= 1;
   if (moveRemaining <= 0) {
     moveCount += 1;
     notify('起来动一下', '站起来，喝口水，伸展一下身体');
@@ -85,7 +160,7 @@ function tick() {
   render();
 
   if (document.body.classList.contains('docked')) {
-    updateDock(eyeReset);
+    updateDock();
   }
 }
 
@@ -107,6 +182,12 @@ startBtn.addEventListener('click', async () => {
   if ('Notification' in window && Notification.permission === 'default') {
     try { await Notification.requestPermission(); } catch (_) {}
   }
+
+  // unlock audio while we still have a user gesture
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch (_) {}
 
   document.body.classList.add('transitioning');
 
@@ -138,6 +219,7 @@ pauseBtn.addEventListener('click', () => {
 stopBtn.addEventListener('click', () => {
   current = state.IDLE;
   stopTicking();
+  clearEyeBreak();
   document.body.classList.remove('running');
   eyeRemaining = EYE_INTERVAL;
   moveRemaining = MOVE_INTERVAL;
