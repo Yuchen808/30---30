@@ -81,7 +81,16 @@
         </svg>
       </button>
 
-      <h2 class="stats-title">专注时间</h2>
+      <div class="stats-title-row">
+        <h2 class="stats-title">专注时间</h2>
+        <button id="picker-trigger" class="picker-trigger" type="button">
+          <span id="picked-date-label">2026-01-01</span>
+          <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="2 3.5 4.5 6 7 3.5"/>
+          </svg>
+        </button>
+        <input type="date" id="focus-date-picker" class="hidden-date-input"/>
+      </div>
 
       <div class="stats-row">
         <div class="stats-row-label">今日</div>
@@ -95,12 +104,9 @@
 
       <div class="stats-divider"></div>
 
-      <div class="stats-row stats-picker-row">
-        <input type="date" id="focus-date-picker" class="stats-date-input"/>
-        <div class="stats-row-value">
-          <span class="stats-picked-date" id="picked-date-label"></span>
-          <span id="picked-focus-time">0 秒</span>
-        </div>
+      <div class="stats-row">
+        <div class="stats-row-label">所选日期</div>
+        <div class="stats-row-value" id="picked-focus-time">0 秒</div>
       </div>
     </div>
   </div>
