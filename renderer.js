@@ -394,6 +394,7 @@ const statsBtn = document.getElementById('open-stats');
 const statsPanel = document.getElementById('stats-panel');
 const statsClose = document.getElementById('stats-close');
 const datePicker = document.getElementById('focus-date-picker');
+const pickerTrigger = document.getElementById('picker-trigger');
 const todayFocusEl = document.getElementById('today-focus-time');
 const weekFocusEl = document.getElementById('week-focus-time');
 const pickedFocusEl = document.getElementById('picked-focus-time');
@@ -423,3 +424,11 @@ statsPanel.addEventListener('click', (e) => {
 });
 
 datePicker.addEventListener('change', refreshStatsPanel);
+
+pickerTrigger.addEventListener('click', () => {
+  if (typeof datePicker.showPicker === 'function') {
+    try { datePicker.showPicker(); } catch (_) { datePicker.focus(); }
+  } else {
+    datePicker.focus();
+  }
+});
