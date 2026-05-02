@@ -650,10 +650,10 @@ body.docked .stats-btn {
 }
 
 .stats-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 88px 1fr;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   padding: 6px 0;
 }
 
@@ -669,7 +669,7 @@ body.docked .stats-btn {
   color: #1A1A1A;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
-  text-align: right;
+  text-align: left;
 }
 
 .stats-divider {
