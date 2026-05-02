@@ -207,6 +207,13 @@ body.break .dock-dot {
   -webkit-app-region: no-drag;
 }
 
+/* During a break in docked mode, the whole dock window must accept
+   clicks (otherwise the drag-region eats them). Especially during
+   break-move where dock-dot is hidden and STAND UP needs to ack. */
+body.break #docked-view {
+  -webkit-app-region: no-drag;
+}
+
 body.break .dock-timer {
   animation: breakBlink 1.6s ease-in-out infinite;
 }
