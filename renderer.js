@@ -5,7 +5,7 @@ const EYE_INTERVAL = 5;    // 5s instead of 30 min
 const MOVE_INTERVAL = 10;  // 10s instead of 60 min
 const PHASE1_MS = 1000;  // dot expansion
 // phase 2 (running UI fade-in) is CSS-driven, ~1000ms
-const BREAK_BELL_INTERVAL_MS = 20000;  // re-ring every 20s while waiting for ack
+const BREAK_BELL_INTERVAL_MS = 30000;  // re-ring every 30s while waiting for ack
 
 const startBtn = document.getElementById('start-btn');
 const pauseBtn = document.getElementById('pause-btn');
@@ -188,6 +188,7 @@ function tick() {
   if (current !== state.RUNNING) return;
   if (inBreak) return;  // both timers freeze until user acks
 
+  incrementFocusToday();
   eyeRemaining -= 1;
   moveRemaining -= 1;
 
@@ -336,3 +337,66 @@ undockBtn.addEventListener('click', () => {
   document.body.classList.remove('docked');
   if (window.helper && window.helper.undock) window.helper.undock();
 });
+
+// ---- Daily focus accumulator ----
+const FOCUS_KEY_PREFIX = 'focus-seconds-';
+
+function dateKey(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function getFocusSeconds(key) {
+  const v = localStorage.getItem(FOCUS_KEY_PREFIX + key);
+  return v ? parseInt(v, 10) || 0 : 0;
+}
+
+function incrementFocusToday() {
+  const k = dateKey();
+  const next = getFocusSeconds(k) + 1;
+  localStorage.setItem(FOCUS_KEY_PREFIX + k, String(next));
+}
+
+function formatFocusDuration(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h} 小时 ${m} 分 ${s} 秒`;
+  if (m > 0) return `${m} 分 ${s} 秒`;
+  return `${s} 秒`;
+}
+
+// ---- Stats panel ----
+const statsBtn = document.getElementById('open-stats');
+const statsPanel = document.getElementById('stats-panel');
+const statsClose = document.getElementById('stats-close');
+const datePicker = document.getElementById('focus-date-picker');
+const todayFocusEl = document.getElementById('today-focus-time');
+const pickedFocusEl = document.getElementById('picked-focus-time');
+const pickedDateLabel = document.getElementById('picked-date-label');
+
+function refreshStatsPanel() {
+  const today = dateKey();
+  todayFocusEl.textContent = formatFocusDuration(getFocusSeconds(today));
+  if (!datePicker.value) datePicker.value = today;
+  const picked = datePicker.value;
+  pickedDateLabel.textContent = picked;
+  pickedFocusEl.textContent = formatFocusDuration(getFocusSeconds(picked));
+}
+
+statsBtn.addEventListener('click', () => {
+  refreshStatsPanel();
+  statsPanel.classList.add('visible');
+});
+
+statsClose.addEventListener('click', () => {
+  statsPanel.classList.remove('visible');
+});
+
+statsPanel.addEventListener('click', (e) => {
+  if (e.target === statsPanel) statsPanel.classList.remove('visible');
+});
+
+datePicker.addEventListener('change', refreshStatsPanel);
