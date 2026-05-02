@@ -26,6 +26,9 @@ let eyeRemaining = EYE_INTERVAL;
 let moveRemaining = MOVE_INTERVAL;
 let eyeCount = 0;
 let moveCount = 0;
+// false = first 30-min of the hour (dock dot grows 0 -> 1)
+// true  = second 30-min of the hour (dock dot shrinks 1 -> 0)
+let secondHalf = false;
 
 function format(seconds) {
   const s = Math.max(0, Math.floor(seconds));
@@ -52,7 +55,9 @@ function render() {
 
 // ---- Bell synthesis (Web Audio) ----
 let audioCtx = null;
-function playBell() {
+const BELL_GAP_MS = 700;  // spacing between successive bells in a multi-ring
+
+function playSingleBell() {
   try {
     if (!audioCtx) {
       audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -83,6 +88,12 @@ function playBell() {
   } catch (_) { /* audio not available */ }
 }
 
+function playBell(count = 1) {
+  for (let i = 0; i < count; i++) {
+    setTimeout(playSingleBell, i * BELL_GAP_MS);
+  }
+}
+
 // ---- Ripple animation ----
 const rippleStage = document.getElementById('ripple-stage');
 function showRipples() {
@@ -99,15 +110,20 @@ let inBreak = false;
 const breakNeeds = { eye: false, move: false };
 let breakBellInterval = null;
 
+function bellCountForBreak() {
+  return breakNeeds.move ? 3 : 1;
+}
+
 function startBreak() {
-  if (inBreak) return;  // already in break, just adding to needs
+  if (inBreak) return;
   inBreak = true;
   document.body.classList.add('break');
-  playBell();
+  if (breakNeeds.move) document.body.classList.add('break-move');
+  playBell(bellCountForBreak());
   showRipples();
   if (breakBellInterval) clearInterval(breakBellInterval);
   breakBellInterval = setInterval(() => {
-    if (inBreak) playBell();
+    if (inBreak) playBell(bellCountForBreak());
   }, BREAK_BELL_INTERVAL_MS);
 }
 
@@ -115,24 +131,31 @@ function triggerEyeBreak() {
   breakNeeds.eye = true;
   eyeCount += 1;
   notify('看一眼窗外', '把目光放到最远处，半秒钟就好');
-  startBreak();
 }
 
 function triggerMoveBreak() {
   breakNeeds.move = true;
   moveCount += 1;
   notify('起来动一下', '站起来，喝口水，伸展一下身体');
-  startBreak();
 }
 
 function acknowledgeBreak() {
   if (!inBreak) return;
   inBreak = false;
   document.body.classList.remove('break');
+  document.body.classList.remove('break-move');
   hideRipples();
   if (breakBellInterval) {
     clearInterval(breakBellInterval);
     breakBellInterval = null;
+  }
+  // Decide which half comes next BEFORE we clear the need flags.
+  // move ack -> hour done -> next cycle is first half (dot grows from 0)
+  // eye-only ack -> first half done -> next cycle is second half (dot starts full, shrinks)
+  if (breakNeeds.move) {
+    secondHalf = false;
+  } else if (breakNeeds.eye) {
+    secondHalf = true;
   }
   if (breakNeeds.eye) {
     eyeRemaining = EYE_INTERVAL;
@@ -157,6 +180,7 @@ function clearBreak() {
   breakNeeds.eye = false;
   breakNeeds.move = false;
   document.body.classList.remove('break');
+  document.body.classList.remove('break-move');
   hideRipples();
 }
 
@@ -179,14 +203,20 @@ function tick() {
   eyeRemaining -= 1;
   moveRemaining -= 1;
 
+  let needsBreak = false;
   if (eyeRemaining <= 0) {
     eyeRemaining = 0;
     triggerEyeBreak();
+    needsBreak = true;
   }
   if (moveRemaining <= 0) {
     moveRemaining = 0;
     triggerMoveBreak();
+    needsBreak = true;
   }
+  // start the break AFTER both needs are set so bell count / overlay
+  // reflect "is this an hour mark?" correctly.
+  if (needsBreak) startBreak();
 
   render();
 
@@ -230,6 +260,7 @@ startBtn.addEventListener('click', async () => {
     moveRemaining = MOVE_INTERVAL;
     eyeCount = 0;
     moveCount = 0;
+    secondHalf = false;
     current = state.RUNNING;
     render();
     startTicking();
@@ -254,6 +285,7 @@ stopBtn.addEventListener('click', () => {
   document.body.classList.remove('running');
   eyeRemaining = EYE_INTERVAL;
   moveRemaining = MOVE_INTERVAL;
+  secondHalf = false;
 });
 
 // Click anywhere (except system buttons) to acknowledge a pending break
@@ -279,7 +311,13 @@ const dockTimer = document.getElementById('dock-timer');
 const MAX_DOCK_SCALE = 15;  // dot grows to fully cover the docked frame
 
 function dockProgress() {
-  return Math.max(0, Math.min(1, 1 - eyeRemaining / EYE_INTERVAL));
+  // First half: dot grows 0 -> 1 as eyeRemaining drains.
+  // Second half: dot shrinks 1 -> 0 as eyeRemaining drains, so each
+  //              hour interval is two distinct shapes back-to-back.
+  const raw = secondHalf
+    ? eyeRemaining / EYE_INTERVAL
+    : 1 - eyeRemaining / EYE_INTERVAL;
+  return Math.max(0, Math.min(1, raw));
 }
 
 function applyDockDotScale(snap = false) {
