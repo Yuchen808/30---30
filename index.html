@@ -38,6 +38,15 @@
       <div class="dot-wrap">
         <button id="start-btn" class="dot-button" aria-label="开始"></button>
       </div>
+
+      <button id="open-stats" class="stats-btn" aria-label="今日专注时间" title="今日专注时间">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1.5" y="2.5" width="11" height="10" rx="1.5"/>
+          <line x1="1.5" y1="5.5" x2="12.5" y2="5.5"/>
+          <line x1="4" y1="1.5" x2="4" y2="3.5"/>
+          <line x1="10" y1="1.5" x2="10" y2="3.5"/>
+        </svg>
+      </button>
     </section>
 
     <section id="running-view" class="view">
@@ -62,6 +71,34 @@
   </main>
 
   <div id="stand-up-message" aria-hidden="true">STAND UP</div>
+
+  <div id="stats-panel" aria-hidden="true">
+    <div class="stats-card">
+      <button id="stats-close" class="stats-close" aria-label="关闭">
+        <svg width="12" height="12" viewBox="0 0 12 12" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round">
+          <line x1="2.5" y1="2.5" x2="9.5" y2="9.5"/>
+          <line x1="9.5" y1="2.5" x2="2.5" y2="9.5"/>
+        </svg>
+      </button>
+
+      <h2 class="stats-title">专注时间</h2>
+
+      <div class="stats-row">
+        <div class="stats-row-label">今日</div>
+        <div class="stats-row-value" id="today-focus-time">0 秒</div>
+      </div>
+
+      <div class="stats-divider"></div>
+
+      <div class="stats-row stats-picker-row">
+        <input type="date" id="focus-date-picker" class="stats-date-input"/>
+        <div class="stats-row-value">
+          <span class="stats-picked-date" id="picked-date-label"></span>
+          <span id="picked-focus-time">0 秒</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <section id="docked-view">
     <div class="dock-dot" id="dock-dot"></div>
