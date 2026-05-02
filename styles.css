@@ -284,26 +284,17 @@ body.break .dock-timer {
   z-index: 1010;
   opacity: 0;
   color: white;
-  font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
-               "Helvetica Neue", sans-serif;
-  font-size: 84px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.18);
-  transform: scale(0.96);
-  transition: opacity 600ms var(--ease-soft),
-              transform 600ms var(--ease-soft);
+  font-family: "PingFang SC", "PingFang TC", "PingFang HK",
+               "SF Pro Display", "SF Pro Text", -apple-system,
+               BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  font-size: 52px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: opacity 600ms var(--ease-soft);
 }
 
 body.break-move #stand-up-message {
   opacity: 1;
-  transform: scale(1);
-  animation: standUpPulse 1.8s ease-in-out infinite;
-}
-
-@keyframes standUpPulse {
-  0%, 100% { transform: scale(1); }
-  50%      { transform: scale(1.045); }
 }
 
 /* In dock mode, an hour break overrides the dock timer/dot with a clear
@@ -315,11 +306,8 @@ body.docked.break-move .dock-dot {
 }
 
 body.docked #stand-up-message {
-  font-size: 30px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-size: 26px;
   color: var(--green);
-  text-shadow: none;
 }
 
 .app {
