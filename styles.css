@@ -272,6 +272,56 @@ body.break .dock-timer {
   50% { opacity: 0.55; }
 }
 
+/* ---- STAND UP overlay (only for the hour mark / move break) ---- */
+
+#stand-up-message {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1010;
+  opacity: 0;
+  color: white;
+  font-family: "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+               "Helvetica Neue", sans-serif;
+  font-size: 84px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-shadow: 0 4px 28px rgba(0, 0, 0, 0.18);
+  transform: scale(0.96);
+  transition: opacity 600ms var(--ease-soft),
+              transform 600ms var(--ease-soft);
+}
+
+body.break-move #stand-up-message {
+  opacity: 1;
+  transform: scale(1);
+  animation: standUpPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes standUpPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.045); }
+}
+
+/* In dock mode, an hour break overrides the dock timer/dot with a clear
+   green STAND UP — the white-on-white ripple is invisible in the white
+   dock anyway, so this becomes the lone signal. */
+body.docked.break-move .dock-timer,
+body.docked.break-move .dock-dot {
+  display: none;
+}
+
+body.docked #stand-up-message {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--green);
+  text-shadow: none;
+}
+
 .app {
   position: relative;
   height: 100vh;
