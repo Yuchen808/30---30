@@ -599,7 +599,7 @@ body.docked .stats-btn {
   display: grid;
   grid-template-columns: 88px 1fr;
   align-items: center;
-  gap: 16px;
+  gap: 36px;
   margin-bottom: 18px;
 }
 
@@ -654,7 +654,7 @@ body.docked .stats-btn {
   display: grid;
   grid-template-columns: 88px 1fr;
   align-items: center;
-  gap: 16px;
+  gap: 36px;
   padding: 6px 0;
 }
 
