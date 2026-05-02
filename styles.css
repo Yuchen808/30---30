@@ -191,62 +191,6 @@ body.docked {
 .undock-btn svg { display: block; }
 .undock-btn:focus { outline: none; }
 
-/* ---- Water-ripple animation while waiting for ack ----
-   register a custom property so its length value can be
-   interpolated inside @keyframes (Chromium >= 85) */
-
-@property --ripple-offset {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
-}
-
-#ripple-stage {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1000;
-  opacity: 0;
-  transition: opacity 220ms ease;
-}
-
-#ripple-stage.active {
-  opacity: 1;
-  /* sinusoidal-feeling rings: transparent -> soft white -> transparent, no plateau.
-     all three stops shift together so the period stays constant at 28px,
-     letting the keyframe loop (offset 0 -> 28) be visually seamless. */
-  background: repeating-radial-gradient(
-    circle at center,
-    rgba(255, 255, 255, 0)    calc(0px  + var(--ripple-offset)),
-    rgba(255, 255, 255, 0.22) calc(14px + var(--ripple-offset)),
-    rgba(255, 255, 255, 0)    calc(28px + var(--ripple-offset))
-  );
-  filter: blur(1.6px);
-  /* gentle dampening toward the edges */
-  mask-image: radial-gradient(
-    circle at center,
-    black 0%,
-    black 55%,
-    rgba(0, 0, 0, 0.6) 82%,
-    rgba(0, 0, 0, 0.15) 96%,
-    transparent 100%
-  );
-  -webkit-mask-image: radial-gradient(
-    circle at center,
-    black 0%,
-    black 55%,
-    rgba(0, 0, 0, 0.6) 82%,
-    rgba(0, 0, 0, 0.15) 96%,
-    transparent 100%
-  );
-  animation: rippleFlow 2.6s linear infinite;
-}
-
-@keyframes rippleFlow {
-  0%   { --ripple-offset: 0px; }
-  100% { --ripple-offset: 28px; }
-}
-
 /* ---- Break (timer paused at 0, awaiting acknowledgement) ---- */
 
 body.break {
@@ -295,6 +239,14 @@ body.break .dock-timer {
 
 body.break-move #stand-up-message {
   opacity: 1;
+}
+
+/* Hide the running view's timer block during the hour break so
+   STAND UP doesn't fight the 00:00 / labels behind it. Stats and
+   action buttons stay visible. */
+body.break-move #running-view .timer-primary {
+  opacity: 0;
+  transition: opacity 240ms ease;
 }
 
 /* In dock mode, an hour break overrides the dock timer/dot with a clear
