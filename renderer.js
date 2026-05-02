@@ -366,18 +366,41 @@ function formatFocusDuration(seconds) {
   return `${s} 秒`;
 }
 
+// Returns the Monday-of-this-week as a Date at local 00:00:00.
+// JS getDay(): Sunday=0, Monday=1 ... Saturday=6.
+function startOfThisWeek(d = new Date()) {
+  const out = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const day = out.getDay();
+  const offset = (day === 0) ? -6 : (1 - day);  // shift back to Monday
+  out.setDate(out.getDate() + offset);
+  return out;
+}
+
+function getWeekFocusSeconds(now = new Date()) {
+  const monday = startOfThisWeek(now);
+  let total = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    total += getFocusSeconds(dateKey(d));
+  }
+  return total;
+}
+
 // ---- Stats panel ----
 const statsBtn = document.getElementById('open-stats');
 const statsPanel = document.getElementById('stats-panel');
 const statsClose = document.getElementById('stats-close');
 const datePicker = document.getElementById('focus-date-picker');
 const todayFocusEl = document.getElementById('today-focus-time');
+const weekFocusEl = document.getElementById('week-focus-time');
 const pickedFocusEl = document.getElementById('picked-focus-time');
 const pickedDateLabel = document.getElementById('picked-date-label');
 
 function refreshStatsPanel() {
   const today = dateKey();
   todayFocusEl.textContent = formatFocusDuration(getFocusSeconds(today));
+  weekFocusEl.textContent = formatFocusDuration(getWeekFocusSeconds());
   if (!datePicker.value) datePicker.value = today;
   const picked = datePicker.value;
   pickedDateLabel.textContent = picked;
