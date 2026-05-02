@@ -596,11 +596,11 @@ body.docked .stats-btn {
 .stats-close svg { display: block; }
 
 .stats-title-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 88px 1fr;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   margin-bottom: 18px;
-  padding-right: 28px;  /* clear the close button */
 }
 
 .stats-title {
@@ -612,13 +612,14 @@ body.docked .stats-btn {
 }
 
 .picker-trigger {
-  margin-left: auto;
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   background: transparent;
   border: none;
   padding: 2px 4px;
+  margin-left: -4px;  /* visual edge sits flush with value column */
   border-radius: 5px;
   cursor: pointer;
   font-family: inherit;
