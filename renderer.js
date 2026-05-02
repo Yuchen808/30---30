@@ -96,17 +96,6 @@ function playBell(count = 1) {
   }
 }
 
-// ---- Ripple animation ----
-const rippleStage = document.getElementById('ripple-stage');
-function showRipples() {
-  rippleStage.classList.remove('active');
-  void rippleStage.offsetWidth;  // force reflow to restart animation
-  rippleStage.classList.add('active');
-}
-function hideRipples() {
-  rippleStage.classList.remove('active');
-}
-
 // ---- Break state (timer paused at 0, awaiting user ack) ----
 let inBreak = false;
 const breakNeeds = { eye: false, move: false };
@@ -122,7 +111,6 @@ function startBreak() {
   document.body.classList.add('break');
   if (breakNeeds.move) document.body.classList.add('break-move');
   playBell(bellCountForBreak());
-  showRipples();
   if (breakBellInterval) clearInterval(breakBellInterval);
   breakBellInterval = setInterval(() => {
     if (inBreak) playBell(bellCountForBreak());
@@ -146,7 +134,6 @@ function acknowledgeBreak() {
   inBreak = false;
   document.body.classList.remove('break');
   document.body.classList.remove('break-move');
-  hideRipples();
   if (breakBellInterval) {
     clearInterval(breakBellInterval);
     breakBellInterval = null;
@@ -183,7 +170,6 @@ function clearBreak() {
   breakNeeds.move = false;
   document.body.classList.remove('break');
   document.body.classList.remove('break-move');
-  hideRipples();
 }
 
 async function notify(title, body) {
