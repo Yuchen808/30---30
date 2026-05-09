@@ -107,13 +107,13 @@ body.docked .titlebar { display: none; }
   inset: 0;
   background: #FFFFFF;
   overflow: hidden;
-  -webkit-app-region: drag;
   align-items: center;
   justify-content: center;
 }
 
 body.docked #docked-view {
   display: flex;
+  cursor: pointer;
 }
 
 body.docked .app {
@@ -216,6 +216,14 @@ body.break #docked-view {
 
 body.break .dock-timer {
   animation: breakBlink 1.6s ease-in-out infinite;
+}
+
+/* Paused-while-docked: dim timer + dot to signal frozen state */
+body.docked.paused .dock-timer {
+  color: #8E8E93;
+}
+body.docked.paused .dock-dot {
+  opacity: 0.35;
 }
 
 @keyframes breakBlink {
