@@ -72,8 +72,10 @@ function togglePauseResume() {
 }
 
 // ---- Bell synthesis (Web Audio) ----
+// Soft temple-bell / singing-bowl aesthetic: low fundamental, slow attack,
+// long smooth tail, low-pass filter to take the edge off upper partials.
 let audioCtx = null;
-const BELL_GAP_MS = 700;  // spacing between successive bells in a multi-ring
+const BELL_GAP_MS = 1400;  // longer spacing so bells breathe instead of clang
 
 function playSingleBell() {
   try {
@@ -84,24 +86,38 @@ function playSingleBell() {
 
     const ctx = audioCtx;
     const now = ctx.currentTime;
-    const fundamental = 880;  // A5
-    // bell-like inharmonic ratios
+    const fundamental = 392;  // G4 — warm and grounded, not piercing
+    const attack = 0.14;       // soft fade-in (~140ms) — no startle
+    const decay = 5.0;         // long, smooth tail like a real bowl
+    // Mostly-integer harmonics with a touch of inharmonicity for bell character.
+    // Total summed peak ~0.30 — about half the previous loudness.
     const partials = [
-      { ratio: 1.00, gain: 0.30 },
-      { ratio: 2.00, gain: 0.18 },
-      { ratio: 3.00, gain: 0.10 },
-      { ratio: 4.20, gain: 0.05 }
+      { ratio: 1.000, gain: 0.18 },
+      { ratio: 2.005, gain: 0.08 },
+      { ratio: 3.010, gain: 0.03 },
+      { ratio: 4.020, gain: 0.012 }
     ];
+
+    // Low-pass takes the metallic edge off upper partials, leaves warmth.
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 2200;
+    filter.Q.value = 0.7;
+    filter.connect(ctx.destination);
+
     partials.forEach(p => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.frequency.value = fundamental * p.ratio;
       osc.type = 'sine';
-      osc.connect(gain).connect(ctx.destination);
-      gain.gain.setValueAtTime(p.gain, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+      osc.connect(gain).connect(filter);
+      // soft attack — exponential ramp from near-zero to peak
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(p.gain, now + attack);
+      // long, smooth exponential decay
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + attack + decay);
       osc.start(now);
-      osc.stop(now + 2.0);
+      osc.stop(now + attack + decay + 0.1);
     });
   } catch (_) { /* audio not available */ }
 }
