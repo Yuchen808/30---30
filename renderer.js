@@ -343,27 +343,12 @@ undockBtn.addEventListener('click', () => {
   if (window.helper && window.helper.undock) window.helper.undock();
 });
 
-// Tap anywhere on the docked panel to toggle pause/resume, while preserving
-// window-drag. -webkit-app-region: drag makes click events unreliable, so we
-// detect a tap as mousedown→mouseup with < 5px screen-space displacement.
-// Larger displacement = the user dragged the window, so we ignore it.
-const TAP_PX = 5;
-let dockTapStart = null;
-const dockedView = document.getElementById('docked-view');
-dockedView.addEventListener('mousedown', (e) => {
-  if (e.target.closest('.undock-btn')) { dockTapStart = null; return; }
-  dockTapStart = { x: e.screenX, y: e.screenY };
-});
-dockedView.addEventListener('mouseup', (e) => {
-  const start = dockTapStart;
-  dockTapStart = null;
-  if (!start) return;
-  if (e.target.closest('.undock-btn')) return;
+// Center of the docked panel is a no-drag overlay button — clicks fire
+// reliably there (a -webkit-app-region: drag area swallows mousedown on
+// Windows). The ~14px rim around it stays drag for window repositioning.
+document.getElementById('dock-toggle-btn').addEventListener('click', () => {
   if (!document.body.classList.contains('docked')) return;
-  if (inBreak) return;  // body click handler will ack
-  const dx = e.screenX - start.x;
-  const dy = e.screenY - start.y;
-  if (dx * dx + dy * dy > TAP_PX * TAP_PX) return;
+  if (inBreak) return;  // body click handler acks the break instead
   togglePauseResume();
 });
 
