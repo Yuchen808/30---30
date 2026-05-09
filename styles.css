@@ -107,6 +107,7 @@ body.docked .titlebar { display: none; }
   inset: 0;
   background: #FFFFFF;
   overflow: hidden;
+  -webkit-app-region: drag;
   align-items: center;
   justify-content: center;
 }
