@@ -46,11 +46,27 @@ function render() {
     statusDot.classList.add('paused');
     statusText.textContent = '已暂停';
     pauseBtn.textContent = '继续';
+    document.body.classList.add('paused');
   } else {
     statusDot.classList.remove('paused');
     statusText.textContent = '运行中';
     pauseBtn.textContent = '暂停';
+    document.body.classList.remove('paused');
   }
+}
+
+function togglePauseResume() {
+  if (current === state.RUNNING) {
+    current = state.PAUSED;
+    stopTicking();
+  } else if (current === state.PAUSED) {
+    current = state.RUNNING;
+    startTicking();
+  } else {
+    return;
+  }
+  render();
+  if (document.body.classList.contains('docked')) updateDock();
 }
 
 // ---- Bell synthesis (Web Audio) ----
@@ -254,16 +270,7 @@ startBtn.addEventListener('click', async () => {
   }, PHASE1_MS);
 });
 
-pauseBtn.addEventListener('click', () => {
-  if (current === state.RUNNING) {
-    current = state.PAUSED;
-    stopTicking();
-  } else if (current === state.PAUSED) {
-    current = state.RUNNING;
-    startTicking();
-  }
-  render();
-});
+pauseBtn.addEventListener('click', togglePauseResume);
 
 stopBtn.addEventListener('click', () => {
   current = state.IDLE;
@@ -334,6 +341,15 @@ dockBtn.addEventListener('click', () => {
 undockBtn.addEventListener('click', () => {
   document.body.classList.remove('docked');
   if (window.helper && window.helper.undock) window.helper.undock();
+});
+
+// Click anywhere on the docked panel to toggle pause/resume.
+// Skip the undock button (its own handler) and break state (body handler acks).
+document.getElementById('docked-view').addEventListener('click', (e) => {
+  if (!document.body.classList.contains('docked')) return;
+  if (inBreak) return;
+  if (e.target.closest('.undock-btn')) return;
+  togglePauseResume();
 });
 
 // ---- Daily focus accumulator ----
