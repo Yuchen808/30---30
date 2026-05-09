@@ -70,10 +70,50 @@ function togglePauseResume() {
 }
 
 // ---- Bell synthesis (Web Audio) ----
-// Soft temple-bell / singing-bowl aesthetic: low fundamental, slow attack,
-// long smooth tail, low-pass filter to take the edge off upper partials.
+// Round, soft cathedral-bell character: sub-octave hum gives body, classic
+// struck-bell partials (hum / prime / minor 3rd / 5th / nominal / upper),
+// per-partial decay (low partials sustain longest — bloom), slight detune
+// for liveness, and a short procedural reverb for room around the strike.
 let audioCtx = null;
-const BELL_GAP_MS = 1400;  // longer spacing so bells breathe instead of clang
+let bellInput = null;        // lazily-built signal chain entry node
+const BELL_GAP_MS = 1400;    // bells breathe instead of clang
+
+function makeReverbIR(ctx, duration = 1.0, decay = 3.0) {
+  const len = Math.floor(ctx.sampleRate * duration);
+  const buf = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buf.getChannelData(ch);
+    for (let i = 0; i < len; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+  }
+  return buf;
+}
+
+function ensureBellChain() {
+  if (bellInput) return bellInput;
+  const ctx = audioCtx;
+
+  // Warmth lowpass — softens the edge of upper partials without dulling them.
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 2400;
+  filter.Q.value = 0.6;
+
+  // Subtle small-room reverb — depth without smearing the bell.
+  const convolver = ctx.createConvolver();
+  convolver.buffer = makeReverbIR(ctx, 1.0, 3.0);
+  const wet = ctx.createGain();
+  wet.gain.value = 0.18;
+
+  filter.connect(ctx.destination);   // dry
+  filter.connect(convolver);
+  convolver.connect(wet);
+  wet.connect(ctx.destination);      // wet
+
+  bellInput = filter;
+  return bellInput;
+}
 
 function playSingleBell() {
   try {
@@ -84,38 +124,37 @@ function playSingleBell() {
 
     const ctx = audioCtx;
     const now = ctx.currentTime;
-    const fundamental = 392;  // G4 — warm and grounded, not piercing
-    const attack = 0.14;       // soft fade-in (~140ms) — no startle
-    const decay = 5.0;         // long, smooth tail like a real bowl
-    // Mostly-integer harmonics with a touch of inharmonicity for bell character.
-    // Total summed peak ~0.30 — about half the previous loudness.
-    const partials = [
-      { ratio: 1.000, gain: 0.18 },
-      { ratio: 2.005, gain: 0.08 },
-      { ratio: 3.010, gain: 0.03 },
-      { ratio: 4.020, gain: 0.012 }
-    ];
+    const fundamental = 392;  // G4
+    const attack = 0.18;       // ~180ms soft onset
+    const input = ensureBellChain();
 
-    // Low-pass takes the metallic edge off upper partials, leaves warmth.
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 2200;
-    filter.Q.value = 0.7;
-    filter.connect(ctx.destination);
+    // Classic struck-bell partial structure. Each row gets its own decay so
+    // the hum sustains long after upper partials fade — that staggered fall
+    // is what gives a bell its rounded, blooming quality. Slight detune
+    // adds beating/liveness without sounding out of tune.
+    const partials = [
+      // ratio,   gain,   decay(s), detune(cents)
+      { ratio: 0.500, gain: 0.13, decay: 6.5, detune:  0 },  // hum (sub-octave) — body
+      { ratio: 1.000, gain: 0.16, decay: 5.5, detune: -2 },  // prime
+      { ratio: 1.193, gain: 0.05, decay: 4.5, detune: +3 },  // minor third (tierce)
+      { ratio: 1.500, gain: 0.05, decay: 4.0, detune: -1 },  // perfect fifth (quint)
+      { ratio: 2.000, gain: 0.06, decay: 3.5, detune: +2 },  // nominal / octave
+      { ratio: 2.520, gain: 0.020, decay: 2.5, detune:  0 }, // upper, faster
+      { ratio: 3.010, gain: 0.012, decay: 2.0, detune:  0 }, // sparkle, briefest
+    ];
 
     partials.forEach(p => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.frequency.value = fundamental * p.ratio;
       osc.type = 'sine';
-      osc.connect(gain).connect(filter);
-      // soft attack — exponential ramp from near-zero to peak
+      osc.frequency.value = fundamental * p.ratio;
+      osc.detune.value = p.detune;
+      osc.connect(gain).connect(input);
       gain.gain.setValueAtTime(0.0001, now);
       gain.gain.exponentialRampToValueAtTime(p.gain, now + attack);
-      // long, smooth exponential decay
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + attack + decay);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + attack + p.decay);
       osc.start(now);
-      osc.stop(now + attack + decay + 0.1);
+      osc.stop(now + attack + p.decay + 0.1);
     });
   } catch (_) { /* audio not available */ }
 }
