@@ -319,6 +319,13 @@ body.docked #stand-up-message {
   z-index: 1;
 }
 
+.idle-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
 .brand {
   display: flex;
   flex-direction: column;
@@ -331,6 +338,100 @@ body.docked #stand-up-message {
 body.transitioning .brand,
 body.running .brand {
   opacity: 0;
+}
+
+/* ---- Session duration picker (idle view) ---- */
+
+.session-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  margin-top: 26px;
+  transition: opacity 500ms var(--ease-soft);
+}
+
+body.transitioning .session-picker,
+body.running .session-picker {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.session-picker-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+
+.select-wrap {
+  position: relative;
+  display: inline-flex;
+  -webkit-app-region: no-drag;
+}
+
+#duration-select {
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  background: #FFFFFF;
+  border: 1px solid #E5E5EA;
+  border-radius: 10px;
+  padding: 10px 40px 10px 18px;
+  min-width: 152px;
+  text-align: center;
+  text-align-last: center;
+  cursor: pointer;
+  outline: none;
+  -webkit-app-region: no-drag;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+#duration-select:hover {
+  border-color: #C7C7CC;
+}
+
+#duration-select:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(128, 239, 128, 0.28);
+}
+
+.select-wrap .chevron {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #8E8E93;
+  display: block;
+}
+
+/* ---- Session complete overlay ---- */
+
+#session-done-message {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1010;
+  opacity: 0;
+  color: var(--green);
+  font-family: "PingFang SC", "PingFang TC", "PingFang HK",
+               "SF Pro Display", "SF Pro Text", -apple-system,
+               BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  font-size: 48px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: opacity 500ms var(--ease-soft);
+}
+
+body.session-done #session-done-message {
+  opacity: 1;
 }
 
 .title {

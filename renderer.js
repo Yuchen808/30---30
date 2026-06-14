@@ -1,15 +1,23 @@
-// Timing constants (in seconds). Edit for testing — e.g. 10/20.
-const EYE_INTERVAL = 30 * 60;   // every 30 minutes
-const MOVE_INTERVAL = 60 * 60;  // every 60 minutes
+// The "30 · 30" rules are embedded inside a bounded session whose total
+// length the user picks (1–120 min) from the idle-view dropdown:
+//   • look-out (eye) break fires at every 30-min mark strictly before the end
+//   • stand-up (move) break fires at every 60-min mark strictly before the end
+//   • a session ≤ 30 min therefore has no breaks at all — it's a plain countdown
+// EYE/MOVE_INTERVAL are the embedded cadences (seconds). They never change.
+const EYE_INTERVAL = 30 * 60;   // look out every 30 min
+const MOVE_INTERVAL = 60 * 60;  // stand up every 60 min
+const DEFAULT_MINUTES = 60;
 const PHASE1_MS = 1000;  // dot expansion
 // phase 2 (running UI fade-in) is CSS-driven, ~1000ms
 const BREAK_BELL_INTERVAL_MS = 30000;  // re-ring every 30s while waiting for ack
+const DONE_OVERLAY_MS = 2600;          // how long "完成" stays on screen
 
 const startBtn = document.getElementById('start-btn');
 const pauseBtn = document.getElementById('pause-btn');
 const stopBtn = document.getElementById('stop-btn');
-const eyeEl = document.getElementById('eye-countdown');
-const moveEl = document.getElementById('move-countdown');
+const durationSelect = document.getElementById('duration-select');
+const sessionEl = document.getElementById('session-countdown');
+const reminderSubEl = document.getElementById('reminder-sub');
 const statsEl = document.getElementById('stats');
 const statusDot = document.getElementById('status-dot');
 const statusText = document.getElementById('status-text');
@@ -22,6 +30,9 @@ const state = Object.freeze({
 
 let current = state.IDLE;
 let tickHandle = null;
+let selectedMinutes = DEFAULT_MINUTES;
+let sessionTotal = DEFAULT_MINUTES * 60;  // total session length (seconds)
+let totalRemaining = sessionTotal;        // counts down to 0 -> complete
 let eyeRemaining = EYE_INTERVAL;
 let moveRemaining = MOVE_INTERVAL;
 let eyeCount = 0;
@@ -32,14 +43,38 @@ let secondHalf = false;
 
 function format(seconds) {
   const s = Math.max(0, Math.floor(seconds));
-  const m = Math.floor(s / 60);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
   const r = s % 60;
+  // ≥ 1 hour: H:MM:SS (e.g. 2:00:00, 1:30:00); otherwise MM:SS.
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+  }
   return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
 }
 
+// Build the reminder sub-line, showing only the breaks that will still
+// occur before this session ends. A "next look-out" that lands past the
+// finish line is hidden so the text never promises a break that won't fire.
+function renderReminderSub() {
+  const elapsed = sessionTotal - totalRemaining;
+  const parts = [];
+  if (elapsed + eyeRemaining < sessionTotal) {
+    parts.push(`下一次看窗外 <span class="num">${format(eyeRemaining)}</span>`);
+  }
+  if (elapsed + moveRemaining < sessionTotal) {
+    parts.push(`下一次起身 <span class="num">${format(moveRemaining)}</span>`);
+  }
+  if (parts.length === 0) {
+    reminderSubEl.innerHTML = '专注中';
+  } else {
+    reminderSubEl.innerHTML = parts.join(' · ');
+  }
+}
+
 function render() {
-  eyeEl.textContent = format(eyeRemaining);
-  moveEl.textContent = format(moveRemaining);
+  sessionEl.textContent = format(totalRemaining);
+  renderReminderSub();
   statsEl.textContent = `今日 · 看窗外 ${eyeCount} 次 · 活动 ${moveCount} 次`;
 
   if (current === state.PAUSED) {
@@ -255,9 +290,22 @@ async function notify(title, body) {
 
 function tick() {
   if (current !== state.RUNNING) return;
-  if (inBreak) return;  // both timers freeze until user acks
+  if (inBreak) return;  // everything freezes until user acks
 
   incrementFocusToday();
+  totalRemaining -= 1;
+
+  // Session over takes precedence: a 30/60-min mark that lands exactly on
+  // the finish line does NOT fire a break (this is what makes a ≤30-min
+  // session reminder-free and a 60-min session end without a stand-up).
+  if (totalRemaining <= 0) {
+    totalRemaining = 0;
+    render();
+    if (document.body.classList.contains('docked')) updateDock();
+    completeSession();
+    return;
+  }
+
   eyeRemaining -= 1;
   moveRemaining -= 1;
 
@@ -281,6 +329,30 @@ function tick() {
   if (document.body.classList.contains('docked')) {
     updateDock();
   }
+}
+
+function completeSession() {
+  current = state.IDLE;
+  stopTicking();
+  clearBreak();
+  playBell(2);
+  notify('专注完成', `${selectedMinutes} 分钟专注结束，做得好`);
+
+  // Leave dock mode so the completion + idle screen is visible.
+  if (document.body.classList.contains('docked')) {
+    document.body.classList.remove('docked');
+    if (window.helper && window.helper.undock) window.helper.undock();
+  }
+  document.body.classList.remove('running');
+
+  document.body.classList.add('session-done');
+  setTimeout(() => document.body.classList.remove('session-done'), DONE_OVERLAY_MS);
+
+  // Reset timers for the next run.
+  totalRemaining = sessionTotal;
+  eyeRemaining = EYE_INTERVAL;
+  moveRemaining = MOVE_INTERVAL;
+  secondHalf = false;
 }
 
 function startTicking() {
@@ -310,10 +382,14 @@ startBtn.addEventListener('click', async () => {
 
   document.body.classList.add('transitioning');
 
+  selectedMinutes = parseInt(durationSelect.value, 10) || DEFAULT_MINUTES;
+  sessionTotal = selectedMinutes * 60;
+
   setTimeout(() => {
     document.body.classList.remove('transitioning');
     document.body.classList.add('running');
 
+    totalRemaining = sessionTotal;
     eyeRemaining = EYE_INTERVAL;
     moveRemaining = MOVE_INTERVAL;
     eyeCount = 0;
@@ -332,6 +408,7 @@ stopBtn.addEventListener('click', () => {
   stopTicking();
   clearBreak();
   document.body.classList.remove('running');
+  totalRemaining = sessionTotal;
   eyeRemaining = EYE_INTERVAL;
   moveRemaining = MOVE_INTERVAL;
   secondHalf = false;
@@ -360,12 +437,10 @@ const dockTimer = document.getElementById('dock-timer');
 const MAX_DOCK_SCALE = 15;  // dot grows to fully cover the docked frame
 
 function dockProgress() {
-  // First half: dot grows 0 -> 1 as eyeRemaining drains.
-  // Second half: dot shrinks 1 -> 0 as eyeRemaining drains, so each
-  //              hour interval is two distinct shapes back-to-back.
-  const raw = secondHalf
-    ? eyeRemaining / EYE_INTERVAL
-    : 1 - eyeRemaining / EYE_INTERVAL;
+  // Dot grows 0 -> 1 across the whole session, so the docked dot doubles
+  // as a progress ring for the countdown the user picked.
+  if (sessionTotal <= 0) return 0;
+  const raw = 1 - totalRemaining / sessionTotal;
   return Math.max(0, Math.min(1, raw));
 }
 
@@ -382,7 +457,7 @@ function applyDockDotScale(snap = false) {
 }
 
 function updateDock(snap = false) {
-  dockTimer.textContent = format(eyeRemaining);
+  dockTimer.textContent = format(totalRemaining);
   applyDockDotScale(snap);
 }
 

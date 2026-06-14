@@ -30,9 +30,39 @@
 
   <main class="app">
     <section id="idle-view" class="view">
-      <div class="brand">
-        <h1 class="title">30 · 30</h1>
-        <p class="tagline">每 30 分钟看窗外半秒钟<br/>每 60 分钟起身喝水活动</p>
+      <div class="idle-head">
+        <div class="brand">
+          <h1 class="title">30 · 30</h1>
+          <p class="tagline">每 30 分钟看窗外半秒钟<br/>每 60 分钟起身喝水活动</p>
+        </div>
+
+        <div class="session-picker">
+          <label class="session-picker-label" for="duration-select">倒计时时长</label>
+          <div class="select-wrap">
+            <select id="duration-select" aria-label="倒计时时长">
+              <option value="1">1 分钟</option>
+              <option value="2">2 分钟</option>
+              <option value="3">3 分钟</option>
+              <option value="5">5 分钟</option>
+              <option value="10">10 分钟</option>
+              <option value="15">15 分钟</option>
+              <option value="20">20 分钟</option>
+              <option value="25">25 分钟</option>
+              <option value="30">30 分钟</option>
+              <option value="35">35 分钟</option>
+              <option value="40">40 分钟</option>
+              <option value="45">45 分钟</option>
+              <option value="50">50 分钟</option>
+              <option value="55">55 分钟</option>
+              <option value="60" selected>60 分钟</option>
+              <option value="90">90 分钟</option>
+              <option value="120">120 分钟</option>
+            </select>
+            <svg class="chevron" width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="2.5 4 5.5 7 8.5 4"/>
+            </svg>
+          </div>
+        </div>
       </div>
 
       <div class="dot-wrap">
@@ -56,9 +86,9 @@
       </div>
 
       <div class="timer-primary">
-        <div class="timer-label">下一次看窗外</div>
-        <div class="timer" id="eye-countdown">30:00</div>
-        <div class="timer-sub">下一次起身 <span class="num" id="move-countdown">60:00</span></div>
+        <div class="timer-label">剩余时间</div>
+        <div class="timer" id="session-countdown">60:00</div>
+        <div class="timer-sub" id="reminder-sub">下一次看窗外 <span class="num" id="eye-countdown">30:00</span></div>
       </div>
 
       <div class="stats" id="stats">今日 · 看窗外 0 次 · 活动 0 次</div>
@@ -71,6 +101,7 @@
   </main>
 
   <div id="stand-up-message" aria-hidden="true">STAND UP</div>
+  <div id="session-done-message" aria-hidden="true">完成</div>
 
   <div id="stats-panel" aria-hidden="true">
     <div class="stats-card">
