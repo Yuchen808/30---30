@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="space-bloom" cx="50%" cy="50%" r="56%">
+      <stop offset="0%" stop-color="#5CF06B"/>
+      <stop offset="9%" stop-color="#57E978"/>
+      <stop offset="18%" stop-color="#55CF72"/>
+      <stop offset="26%" stop-color="#73B76A"/>
+      <stop offset="33%" stop-color="#919657"/>
+      <stop offset="39%" stop-color="#A87362"/>
+      <stop offset="45%" stop-color="#BA4F70"/>
+      <stop offset="51%" stop-color="#C52A78"/>
+      <stop offset="60%" stop-color="#92215F"/>
+      <stop offset="70%" stop-color="#58224F"/>
+      <stop offset="84%" stop-color="#2B1126"/>
+      <stop offset="100%" stop-color="#09070B"/>
+    </radialGradient>
+  </defs>
+  <!-- Keep a full-size icon silhouette so macOS does not normalize and enlarge the dot. -->
+  <rect x="96" y="96" width="832" height="832" rx="190" fill="url(#space-bloom)"/>
+</svg>

@@ -5,8 +5,37 @@
   --text: #1A1A1A;
   --text-secondary: #8E8E93;
   --text-tertiary: #C7C7CC;
+  --control-bg: #FFFFFF;
+  --control-border: #E5E5EA;
+  --card-bg: #FFFFFF;
+  --dock-bg: #FFFFFF;
+  --hover-bg: rgba(0, 0, 0, 0.05);
+  --divider: rgba(0, 0, 0, 0.08);
 
   --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="dark"],
+body[data-theme="dark"] {
+  --green-running: #2C1429;
+  --bg: #101114;
+  --text: #F3F3F5;
+  --text-secondary: #A4A4AC;
+  --text-tertiary: #6F7078;
+  --control-bg: #1A1B20;
+  --control-border: #35373E;
+  --card-bg: #1A1B20;
+  --dock-bg: #2C1429;
+  --hover-bg: rgba(255, 255, 255, 0.08);
+  --divider: rgba(255, 255, 255, 0.10);
+}
+
+body[data-theme="dark"] #stats-panel {
+  background: rgba(0, 0, 0, 0.56);
 }
 
 * {
@@ -105,7 +134,7 @@ body.docked .titlebar { display: none; }
   display: none;
   position: fixed;
   inset: 0;
-  background: #FFFFFF;
+  background: var(--dock-bg);
   overflow: hidden;
   -webkit-app-region: drag;
   align-items: center;
@@ -121,8 +150,8 @@ body.docked .app {
 }
 
 body.docked {
-  background: #FFFFFF !important;
-  color: #1A1A1A !important;
+  background: var(--dock-bg) !important;
+  color: var(--text) !important;
 }
 
 .dock-dot {
@@ -151,16 +180,46 @@ body.docked {
 .dock-timer {
   position: relative;
   z-index: 2;
+  display: grid;
+  grid-template-columns: 2ch 0.48em 2ch;
+  align-items: baseline;
+  justify-content: center;
   font-size: 46px;
   font-weight: 300;
-  letter-spacing: -0.02em;
-  color: #1A1A1A;
+  letter-spacing: 0;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum";
+  font-feature-settings: "tnum" 1, "kern" 0;
+  font-kerning: none;
   pointer-events: none;
   line-height: 1;
   /* nudge down so the upper dot of ":" aligns with the green dot center */
   transform: translateY(2.5px);
+}
+
+.dock-timer.long-minutes {
+  grid-template-columns: 3ch 0.48em 2ch;
+}
+
+.dock-minutes,
+.dock-seconds {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1ch;
+  width: 100%;
+  justify-content: center;
+}
+
+.dock-digit {
+  display: block;
+  width: 1ch;
+  text-align: center;
+}
+
+.dock-separator {
+  display: block;
+  width: 100%;
+  text-align: center;
 }
 
 /* Transparent click overlay covering the center area of the dock.
@@ -201,8 +260,8 @@ body.break .dock-toggle-btn { display: none; }
 }
 
 .undock-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1A1A1A;
+  background: var(--hover-bg);
+  color: var(--text);
 }
 
 .undock-btn svg { display: block; }
@@ -377,8 +436,8 @@ body.running .session-picker {
   font-size: 15px;
   font-weight: 500;
   color: var(--text);
-  background: #FFFFFF;
-  border: 1px solid #E5E5EA;
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
   border-radius: 10px;
   padding: 10px 40px 10px 18px;
   min-width: 152px;
@@ -387,7 +446,10 @@ body.running .session-picker {
   cursor: pointer;
   outline: none;
   -webkit-app-region: no-drag;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: background-color 1000ms var(--ease-soft),
+              color 600ms ease,
+              border-color 600ms ease,
+              box-shadow 150ms ease;
 }
 
 #duration-select:hover {
@@ -630,7 +692,7 @@ body.running #running-view {
 .stats-btn {
   position: absolute;
   bottom: 18px;
-  right: 18px;
+  right: 62px;
   width: 28px;
   height: 28px;
   background: transparent;
@@ -648,8 +710,8 @@ body.running #running-view {
 }
 
 .stats-btn:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #1A1A1A;
+  background: var(--hover-bg);
+  color: var(--text);
 }
 
 .stats-btn:focus { outline: none; }
@@ -660,6 +722,109 @@ body.running #running-view {
 body.transitioning .stats-btn,
 body.running .stats-btn,
 body.docked .stats-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- Daily-resetting manual theme switch ---- */
+
+.theme-toggle {
+  position: absolute;
+  right: 18px;
+  bottom: 21px;
+  width: 38px;
+  height: 22px;
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 999px;
+  -webkit-app-region: no-drag;
+  opacity: 1;
+  transition: opacity 240ms ease;
+}
+
+.theme-toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #D8D8DD;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  transition: background-color 220ms ease, box-shadow 220ms ease;
+}
+
+.theme-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+  transition: transform 240ms var(--ease-soft), background-color 220ms ease;
+}
+
+.theme-toggle-thumb::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.theme-toggle-thumb::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: -2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--green);
+  opacity: 0;
+  transform: translate(-4px, -2px);
+  transition: opacity 180ms ease, transform 240ms var(--ease-soft);
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle-track {
+  background: var(--green);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle-thumb {
+  transform: translateX(16px);
+  background: transparent;
+  box-shadow: none;
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle-thumb::before {
+  opacity: 1;
+}
+
+.theme-toggle[aria-checked="true"] .theme-toggle-thumb::after {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+.theme-toggle:hover .theme-toggle-track {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.10), 0 0 0 3px rgba(128, 239, 128, 0.14);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+}
+
+body.transitioning .theme-toggle,
+body.running .theme-toggle,
+body.docked .theme-toggle {
   opacity: 0;
   pointer-events: none;
 }
@@ -688,8 +853,8 @@ body.docked .stats-btn {
   position: relative;
   width: 320px;
   max-width: calc(100% - 48px);
-  background: #FFFFFF;
-  color: #1A1A1A;
+  background: var(--card-bg);
+  color: var(--text);
   border-radius: 14px;
   padding: 24px 22px 20px;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
@@ -714,8 +879,8 @@ body.docked .stats-btn {
 }
 
 .stats-close:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #1A1A1A;
+  background: var(--hover-bg);
+  color: var(--text);
 }
 
 .stats-close:focus { outline: none; }
@@ -758,8 +923,8 @@ body.docked .stats-btn {
 }
 
 .picker-trigger:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #1A1A1A;
+  background: var(--hover-bg);
+  color: var(--text);
 }
 
 .picker-trigger:focus { outline: none; }
@@ -787,13 +952,13 @@ body.docked .stats-btn {
 .stats-row-label {
   font-size: 14px;
   font-weight: 500;
-  color: #1A1A1A;
+  color: var(--text);
 }
 
 .stats-row-value {
   font-size: 17px;
   font-weight: 500;
-  color: #1A1A1A;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
   text-align: left;
@@ -801,7 +966,6 @@ body.docked .stats-btn {
 
 .stats-divider {
   height: 1px;
-  background: rgba(0, 0, 0, 0.08);
+  background: var(--divider);
   margin: 12px 0;
 }
-

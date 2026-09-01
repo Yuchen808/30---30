@@ -22,6 +22,70 @@ const statsEl = document.getElementById('stats');
 const statusDot = document.getElementById('status-dot');
 const statusText = document.getElementById('status-text');
 
+// ---- Theme ---------------------------------------------------------------
+// The system appearance is the default. A manual toggle is intentionally
+// temporary: it lasts for the current local day, then returns to system mode
+// at midnight so scheduled system light/dark changes stay authoritative.
+const THEME_OVERRIDE_KEY = 'theme-override';
+const systemDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
+const themeToggle = document.getElementById('theme-toggle');
+let themeResetHandle = null;
+
+function readThemeOverride() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(THEME_OVERRIDE_KEY) || 'null');
+    if (saved && saved.date === dateKey() && ['light', 'dark'].includes(saved.theme)) {
+      return saved.theme;
+    }
+  } catch (_) { /* invalid saved value; reset below */ }
+  localStorage.removeItem(THEME_OVERRIDE_KEY);
+  return null;
+}
+
+function applyTheme(theme, isManual = false) {
+  document.documentElement.dataset.theme = theme;
+  document.body.dataset.theme = theme;
+  const dark = theme === 'dark';
+  themeToggle.setAttribute('aria-checked', String(dark));
+  themeToggle.title = isManual
+    ? `${dark ? '深色' : '浅色'}模式（手动设置，明日恢复跟随系统）`
+    : `跟随系统：${dark ? '深色' : '浅色'}模式`;
+}
+
+function syncTheme() {
+  const override = readThemeOverride();
+  applyTheme(override || (systemDarkMode.matches ? 'dark' : 'light'), Boolean(override));
+}
+
+function scheduleDailyThemeReset() {
+  if (themeResetHandle) clearTimeout(themeResetHandle);
+  const now = new Date();
+  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  themeResetHandle = setTimeout(() => {
+    localStorage.removeItem(THEME_OVERRIDE_KEY);
+    syncTheme();
+    scheduleDailyThemeReset();
+  }, tomorrow.getTime() - now.getTime() + 250);
+}
+
+themeToggle.addEventListener('click', () => {
+  const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+  localStorage.setItem(THEME_OVERRIDE_KEY, JSON.stringify({ date: dateKey(), theme: next }));
+  applyTheme(next, true);
+  scheduleDailyThemeReset();
+});
+
+systemDarkMode.addEventListener('change', () => {
+  if (!readThemeOverride()) syncTheme();
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) syncTheme();
+});
+
+syncTheme();
+scheduleDailyThemeReset();
+
 const state = Object.freeze({
   IDLE: 'idle',
   RUNNING: 'running',
@@ -417,7 +481,7 @@ stopBtn.addEventListener('click', () => {
 // Click anywhere (except system buttons) to acknowledge a pending break
 document.body.addEventListener('click', (e) => {
   if (!inBreak) return;
-  if (e.target.closest('.win-btn, .undock-btn, #pause-btn, #stop-btn, #start-btn')) return;
+  if (e.target.closest('.win-btn, .undock-btn, #pause-btn, #stop-btn, #start-btn, #theme-toggle')) return;
   acknowledgeBreak();
 });
 
@@ -433,6 +497,8 @@ const dockBtn = document.getElementById('win-dock');
 const undockBtn = document.getElementById('undock-btn');
 const dockDot = document.getElementById('dock-dot');
 const dockTimer = document.getElementById('dock-timer');
+const dockMinutes = document.getElementById('dock-minutes');
+const dockSeconds = document.getElementById('dock-seconds');
 
 const MAX_DOCK_SCALE = 15;  // dot grows to fully cover the docked frame
 
@@ -457,8 +523,30 @@ function applyDockDotScale(snap = false) {
 }
 
 function updateDock(snap = false) {
-  dockTimer.textContent = format(totalRemaining);
+  const remaining = Math.max(0, Math.floor(totalRemaining));
+  const minutes = Math.floor(remaining / 60);
+  const seconds = remaining % 60;
+  renderDockDigits(dockMinutes, String(minutes).padStart(2, '0'));
+  renderDockDigits(dockSeconds, String(seconds).padStart(2, '0'));
+  dockTimer.classList.toggle('long-minutes', minutes >= 100);
+  dockTimer.setAttribute('aria-label', `剩余 ${minutes} 分 ${seconds} 秒`);
   applyDockDotScale(snap);
+}
+
+function renderDockDigits(container, value) {
+  const cells = Array.from(container.children);
+  if (cells.length !== value.length) {
+    container.replaceChildren(...Array.from(value, digit => {
+      const cell = document.createElement('span');
+      cell.className = 'dock-digit';
+      cell.textContent = digit;
+      return cell;
+    }));
+    return;
+  }
+  cells.forEach((cell, index) => {
+    if (cell.textContent !== value[index]) cell.textContent = value[index];
+  });
 }
 
 dockBtn.addEventListener('click', () => {
