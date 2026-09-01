@@ -94,7 +94,15 @@
 
       <div class="timer-primary">
         <div class="timer-label">剩余时间</div>
-        <div class="timer" id="session-countdown">60:00</div>
+        <div class="timer" id="session-countdown" aria-label="剩余 60 分 00 秒">
+          <span class="timer-minutes" id="session-minutes">
+            <span class="time-digit">6</span><span class="time-digit">0</span>
+          </span>
+          <span class="timer-separator" aria-hidden="true">:</span>
+          <span class="timer-seconds" id="session-seconds">
+            <span class="time-digit">0</span><span class="time-digit">0</span>
+          </span>
+        </div>
         <div class="timer-sub" id="reminder-sub">下一次看窗外 <span class="num" id="eye-countdown">30:00</span></div>
       </div>
 
@@ -153,11 +161,11 @@
     <div class="dock-dot" id="dock-dot"></div>
     <div class="dock-timer" id="dock-timer" aria-label="剩余 30 分 00 秒">
       <span class="dock-minutes" id="dock-minutes">
-        <span class="dock-digit">3</span><span class="dock-digit">0</span>
+        <span class="time-digit">3</span><span class="time-digit">0</span>
       </span>
       <span class="dock-separator" aria-hidden="true">:</span>
       <span class="dock-seconds" id="dock-seconds">
-        <span class="dock-digit">0</span><span class="dock-digit">0</span>
+        <span class="time-digit">0</span><span class="time-digit">0</span>
       </span>
     </div>
     <button class="dock-toggle-btn" id="dock-toggle-btn" aria-label="暂停 / 继续" title="暂停 / 继续"></button>

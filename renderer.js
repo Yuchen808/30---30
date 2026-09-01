@@ -17,6 +17,8 @@ const pauseBtn = document.getElementById('pause-btn');
 const stopBtn = document.getElementById('stop-btn');
 const durationSelect = document.getElementById('duration-select');
 const sessionEl = document.getElementById('session-countdown');
+const sessionMinutesEl = document.getElementById('session-minutes');
+const sessionSecondsEl = document.getElementById('session-seconds');
 const reminderSubEl = document.getElementById('reminder-sub');
 const statsEl = document.getElementById('stats');
 const statusDot = document.getElementById('status-dot');
@@ -105,16 +107,48 @@ let moveCount = 0;
 // true  = second 30-min of the hour (dock dot shrinks 1 -> 0)
 let secondHalf = false;
 
-function format(seconds) {
-  const s = Math.max(0, Math.floor(seconds));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const r = s % 60;
-  // ≥ 1 hour: H:MM:SS (e.g. 2:00:00, 1:30:00); otherwise MM:SS.
-  if (h > 0) {
-    return `${h}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+function splitMinuteTime(seconds) {
+  const remaining = Math.max(0, Math.floor(seconds));
+  return {
+    minutes: Math.floor(remaining / 60),
+    seconds: remaining % 60
+  };
+}
+
+function renderFixedDigits(container, value) {
+  const cells = Array.from(container.children);
+  if (cells.length !== value.length) {
+    container.replaceChildren(...Array.from(value, digit => {
+      const cell = document.createElement('span');
+      cell.className = 'time-digit';
+      cell.textContent = digit;
+      return cell;
+    }));
+    return;
   }
-  return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
+  cells.forEach((cell, index) => {
+    if (cell.textContent !== value[index]) cell.textContent = value[index];
+  });
+}
+
+function renderFixedTime(wrapper, minutesEl, secondsEl, value) {
+  const { minutes, seconds } = splitMinuteTime(value);
+  renderFixedDigits(minutesEl, String(minutes).padStart(2, '0'));
+  renderFixedDigits(secondsEl, String(seconds).padStart(2, '0'));
+  wrapper.classList.toggle('long-minutes', minutes >= 100);
+  wrapper.setAttribute('aria-label', `剩余 ${minutes} 分 ${seconds} 秒`);
+}
+
+function fixedTimeMarkup(value) {
+  const { minutes, seconds } = splitMinuteTime(value);
+  const digits = text => Array.from(text, digit => `<span class="time-digit">${digit}</span>`).join('');
+  const minuteText = String(minutes).padStart(2, '0');
+  const secondText = String(seconds).padStart(2, '0');
+  return `<span class="inline-time${minutes >= 100 ? ' long-minutes' : ''}">` +
+    `<span class="inline-minutes">${digits(minuteText)}</span>` +
+    `<span class="inline-separator">:</span>` +
+    `<span class="inline-seconds">${digits(secondText)}</span>` +
+    `</span>`;
 }
 
 // Build the reminder sub-line, showing only the breaks that will still
@@ -124,10 +158,10 @@ function renderReminderSub() {
   const elapsed = sessionTotal - totalRemaining;
   const parts = [];
   if (elapsed + eyeRemaining < sessionTotal) {
-    parts.push(`下一次看窗外 <span class="num">${format(eyeRemaining)}</span>`);
+    parts.push(`下一次看窗外 ${fixedTimeMarkup(eyeRemaining)}`);
   }
   if (elapsed + moveRemaining < sessionTotal) {
-    parts.push(`下一次起身 <span class="num">${format(moveRemaining)}</span>`);
+    parts.push(`下一次起身 ${fixedTimeMarkup(moveRemaining)}`);
   }
   if (parts.length === 0) {
     reminderSubEl.innerHTML = '专注中';
@@ -137,9 +171,10 @@ function renderReminderSub() {
 }
 
 function render() {
-  sessionEl.textContent = format(totalRemaining);
+  renderFixedTime(sessionEl, sessionMinutesEl, sessionSecondsEl, totalRemaining);
   renderReminderSub();
-  statsEl.textContent = `今日 · 看窗外 ${eyeCount} 次 · 活动 ${moveCount} 次`;
+  statsEl.innerHTML = `今日 · 看窗外 <span class="stats-count">${eyeCount}</span> 次 · ` +
+    `活动 <span class="stats-count">${moveCount}</span> 次`;
 
   if (current === state.PAUSED) {
     statusDot.classList.add('paused');
@@ -523,30 +558,8 @@ function applyDockDotScale(snap = false) {
 }
 
 function updateDock(snap = false) {
-  const remaining = Math.max(0, Math.floor(totalRemaining));
-  const minutes = Math.floor(remaining / 60);
-  const seconds = remaining % 60;
-  renderDockDigits(dockMinutes, String(minutes).padStart(2, '0'));
-  renderDockDigits(dockSeconds, String(seconds).padStart(2, '0'));
-  dockTimer.classList.toggle('long-minutes', minutes >= 100);
-  dockTimer.setAttribute('aria-label', `剩余 ${minutes} 分 ${seconds} 秒`);
+  renderFixedTime(dockTimer, dockMinutes, dockSeconds, totalRemaining);
   applyDockDotScale(snap);
-}
-
-function renderDockDigits(container, value) {
-  const cells = Array.from(container.children);
-  if (cells.length !== value.length) {
-    container.replaceChildren(...Array.from(value, digit => {
-      const cell = document.createElement('span');
-      cell.className = 'dock-digit';
-      cell.textContent = digit;
-      return cell;
-    }));
-    return;
-  }
-  cells.forEach((cell, index) => {
-    if (cell.textContent !== value[index]) cell.textContent = value[index];
-  });
 }
 
 dockBtn.addEventListener('click', () => {
