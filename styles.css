@@ -469,7 +469,7 @@ body.running .session-picker {
   background: var(--control-bg);
   border: 1px solid var(--control-border);
   border-radius: 10px;
-  padding: 10px 40px 10px 18px;
+  padding: 10px 36px;
   min-width: 152px;
   text-align: center;
   text-align-last: center;
