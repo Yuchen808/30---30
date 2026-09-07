@@ -16,6 +16,8 @@ const startBtn = document.getElementById('start-btn');
 const pauseBtn = document.getElementById('pause-btn');
 const stopBtn = document.getElementById('stop-btn');
 const durationSelect = document.getElementById('duration-select');
+const durationMenu = document.getElementById('duration-menu');
+const selectWrap = durationSelect.closest('.select-wrap');
 const sessionEl = document.getElementById('session-countdown');
 const sessionMinutesEl = document.getElementById('session-minutes');
 const sessionSecondsEl = document.getElementById('session-seconds');
@@ -677,3 +679,99 @@ pickerTrigger.addEventListener('click', () => {
     datePicker.focus();
   }
 });
+
+
+// ---- Custom duration dropdown (native popup can't be themed green) ----
+(() => {
+  const items = [];
+  let activeIdx = -1;
+
+  Array.from(durationSelect.options).forEach((opt, i) => {
+    const li = document.createElement('li');
+    li.className = 'duration-option';
+    li.setAttribute('role', 'option');
+    li.dataset.value = opt.value;
+    li.textContent = opt.textContent;
+    li.addEventListener('mouseenter', () => setActive(i));
+    li.addEventListener('click', () => choose(i));
+    durationMenu.appendChild(li);
+    items.push(li);
+  });
+
+  function syncSelected() {
+    items.forEach((li) => {
+      li.setAttribute('aria-selected', li.dataset.value === durationSelect.value ? 'true' : 'false');
+    });
+  }
+
+  function setActive(i) {
+    if (activeIdx >= 0) items[activeIdx].classList.remove('active');
+    activeIdx = i;
+    if (activeIdx >= 0) {
+      items[activeIdx].classList.add('active');
+      items[activeIdx].scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  function isOpen() { return selectWrap.classList.contains('open'); }
+
+  function open() {
+    if (isOpen()) return;
+    syncSelected();
+    durationMenu.hidden = false;
+    selectWrap.classList.add('open');
+    durationSelect.setAttribute('aria-expanded', 'true');
+    setActive(durationSelect.selectedIndex);
+  }
+
+  function close() {
+    if (!isOpen()) return;
+    selectWrap.classList.remove('open');
+    durationSelect.setAttribute('aria-expanded', 'false');
+    setActive(-1);
+    setTimeout(() => { if (!isOpen()) durationMenu.hidden = true; }, 200);
+  }
+
+  function choose(i) {
+    durationSelect.selectedIndex = i;
+    durationSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    close();
+  }
+
+  // Suppress the native popup; open ours instead.
+  durationSelect.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    durationSelect.focus();
+    isOpen() ? close() : open();
+  });
+
+  durationSelect.addEventListener('keydown', (e) => {
+    if (!isOpen()) {
+      if (e.key === ' ' || e.key === 'Enter' || (e.altKey && e.key === 'ArrowDown')) {
+        e.preventDefault();
+        open();
+      }
+      return; // plain arrow keys change the value natively while closed
+    }
+    switch (e.key) {
+      case 'ArrowDown': e.preventDefault(); setActive(Math.min(items.length - 1, activeIdx + 1)); break;
+      case 'ArrowUp':   e.preventDefault(); setActive(Math.max(0, activeIdx - 1)); break;
+      case 'Home':      e.preventDefault(); setActive(0); break;
+      case 'End':       e.preventDefault(); setActive(items.length - 1); break;
+      case 'Enter':
+      case ' ':         e.preventDefault(); if (activeIdx >= 0) choose(activeIdx); break;
+      case 'Escape':
+      case 'Tab':       close(); break;
+      default: break;
+    }
+  });
+
+  document.addEventListener('mousedown', (e) => {
+    if (isOpen() && !selectWrap.contains(e.target)) close();
+  });
+  window.addEventListener('blur', close);
+  durationSelect.addEventListener('change', syncSelected);
+  durationSelect.setAttribute('aria-haspopup', 'listbox');
+  durationSelect.setAttribute('aria-expanded', 'false');
+  syncSelected();
+})();

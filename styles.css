@@ -499,6 +499,71 @@ body.running .session-picker {
   pointer-events: none;
   color: #8E8E93;
   display: block;
+  transition: transform 200ms var(--ease-soft);
+}
+
+.select-wrap.open .chevron {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* Custom popup replacing the native <select> menu so the highlight can be
+   theme green (Chromium's native popup uses the OS highlight colour). */
+.duration-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 296px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--control-bg);
+  border: 1px solid var(--control-border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  z-index: 300;
+  -webkit-app-region: no-drag;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 160ms var(--ease-soft), transform 200ms var(--ease-soft);
+}
+
+.duration-menu[hidden] { display: block; }
+
+.select-wrap.open .duration-menu {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.duration-menu::-webkit-scrollbar { width: 6px; }
+.duration-menu::-webkit-scrollbar-thumb {
+  background: var(--control-border);
+  border-radius: 3px;
+}
+
+.duration-option {
+  padding: 7px 12px;
+  border-radius: 7px;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 90ms ease, color 90ms ease;
+}
+
+.duration-option.active {
+  background: rgba(128, 239, 128, 0.22);
+}
+
+.duration-option[aria-selected="true"],
+.duration-option[aria-selected="true"].active {
+  background: var(--green);
+  color: #1A1A1A;
 }
 
 /* ---- Session complete overlay ---- */
